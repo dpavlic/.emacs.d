@@ -146,6 +146,7 @@
 	   'undo-auto--last-boundary-amalgamating-number
 	   :override #'ignore)
   (evil-ex-define-cmd "q[uit]" nil)
+  (evil-ex-define-cmd "wq" nil)
   (evil-mode 1))
 
 (use-package
@@ -215,12 +216,18 @@
   'save-buffer
   "b d"
   'kill-buffer-and-window
+  "b e"
+  'eval-buffer
   "b l"
   'helm-buffers-list
   "b s"
   'helm-swoop
   "f r"
   'helm-recentf
+  "g"
+  '(:ignore t :which-key "git")
+  "g s"
+  'magit-status
   "e"
   'eshell)
 
