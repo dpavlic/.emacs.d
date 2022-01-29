@@ -38,7 +38,7 @@
 (menu-bar-mode -1)
 (tool-bar-mode -1)
 
-(setq inhibit-startup-message t)
+;; (setq inhibit-startup-message t)
 
 ;; Scrollings, vim style
 (setq scroll-step 1)
@@ -151,8 +151,7 @@
 
 (use-package
   lispy
-  :ensure t
-  :hook (emacs-lisp-mode . (lambda () (lispy-mode 1))))
+  :ensure t)
 (use-package
   lispyville
   :ensure t
@@ -160,14 +159,20 @@
 (use-package
   evil-collection
   :ensure t
-  :config (evil-collection-init))
+  :config (evil-collection-init)
+  (with-eval-after-load
+      "evil-collection-magit-state"
+    ((evil-define-key*
+       evil-collection-magit-state
+       magit-mode-map
+       [escape]
+       nil))))
+
 (use-package
   which-key
   :ensure t
   :init (which-key-setup-minibuffer)
   (which-key-mode))
-
-(use-package magit :ensure t)
 
 (use-package general :ensure t)
 
@@ -204,8 +209,24 @@
   ;; Use tab completion a la youcompleteme
   (company-tng-configure-default))
 
+;; Dashboard
+(use-package
+  dashboard
+  :ensure t
+  :config (dashboard-setup-startup-hook)
+  (setq dashboard-banner-logo-title
+	"Dashboard")
+  (setq dashboard-set-init-info
+	nil)
+  (setq dashboard-set-footer nil))
+
 ;; Keybindings
 (general-evil-setup t)
+(general-define-key
+ ;; Define escape as a transient quit (for magit)
+ :keymaps 'transient-base-map
+ "<escape>"
+ 'transient-quit-one)
 (nmap "<up>" 'evil-scroll-up "<down>" 'evil-scroll-down)
 (nmap
   :prefix "SPC"
