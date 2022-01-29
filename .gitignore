@@ -2,3 +2,7 @@
 *.*
 !init.el
 !.gitignore
+!/eshell
+/eshell/*
+!/eshell/alias
+
