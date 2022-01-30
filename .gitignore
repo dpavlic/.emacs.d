@@ -1,6 +1,7 @@
 *
 *.*
 !init.el
+!keybindings.el
 !.gitignore
 !/eshell
 /eshell/*
