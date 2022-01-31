@@ -1,14 +1,21 @@
 ;; Keybindings
 (general-evil-setup t)
+
+;; Mode-specific bindings
 (general-define-key
  ;; Define escape as a transient quit (for magit)
  :keymaps 'transient-base-map
  "<escape>"
- 'transient-quit-one
+ 'transient-quit-one)
+(general-define-key
  :keymaps 'magit-status-mode-map
  "<escape>"
  'magit-mode-bury-buffer)
+
+;; Normal mode keys
 (nmap "<up>" 'evil-scroll-up "<down>" 'evil-scroll-down)
+
+;; Leader keys
 (nmap
   :prefix "SPC"
   "b"
