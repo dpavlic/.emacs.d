@@ -15,10 +15,10 @@
   (require 'use-package))
 (setq use-package-compute-statistics t)
 
+(package-initialize)
 (add-to-list
  'package-archives
  '("MELPA" . "http://melpa.org/packages/"))
-(package-initialize)
 
 ;; Basic Configuration
 ;; 1. Display Line Numbers
