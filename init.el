@@ -1,12 +1,7 @@
-(require 'cl-lib)
-(require 'org)
-
 ;; Functions
 (defun my/join-path (&rest path-vals)
-  (let ((map-to-dirs (cl-map
-		      'vector
-		      #'file-name-as-directory
-		      path-vals)))
+  (let ((map-to-dirs
+	 (mapcar #'file-name-as-directory path-vals)))
     (mapconcat 'identity map-to-dirs "")))
 
 ;; Package bootstrap and initialize
@@ -18,6 +13,8 @@
     "pkg"
     "use-package"))
   (require 'use-package))
+(setq use-package-compute-statistics t)
+
 (add-to-list
  'package-archives
  '("MELPA" . "http://melpa.org/packages/"))
@@ -37,8 +34,6 @@
 
 (menu-bar-mode -1)
 (tool-bar-mode -1)
-
-;; (setq inhibit-startup-message t)
 
 ;; Scrollings, vim style
 (setq scroll-step 1)
@@ -79,6 +74,24 @@
 (add-hook
  'before-save-hook
  'force-backup-of-buffer)
+
+;; Ido mode customization
+;; (setq ido-enable-flex-matching t)
+;; (setq ido-everywhere t)
+;; (ido-mode 1)
+;; (setq ido-use-filename-at-point 'guess)
+;; (setq ido-create-new-buffer 'always)
+
+;; Fix up the isearch jumping to the END of the search
+(add-hook 'isearch-mode-end-hook 'my-goto-match-beginning)
+(defun my-goto-match-beginning ()
+  (when (and isearch-forward isearch-other-end)
+    (goto-char isearch-other-end)))
+
+(defadvice isearch-exit (after my-goto-match-beginning activate)
+  "Go to beginning of match."
+  (when (and isearch-forward isearch-other-end)
+    (goto-char isearch-other-end)))
 
 ;; Source local.el if it exists
 ;; local.el does not live in git :: the idea is that we store only things
@@ -124,6 +137,11 @@
 	"Inconsolata-12")))
 
 ;; Packages
+(use-package org :defer)
+(use-package helm :ensure t)
+(use-package avy :ensure t :config (global-set-key (kbd "C-/") 'avy-goto-char-timer))
+					 
+(use-package browse-kill-ring :ensure t)
 (use-package
   rainbow-delimiters
   :ensure t
@@ -133,56 +151,22 @@
   projectile
   :ensure t)
 
-(use-package undo-fu :ensure t)
 (use-package
-  evil
+  undo-fu
   :ensure t
-  :init (setq evil-want-keybinding nil)
-  (setq evil-want-C-u-scroll t)
-  (setq evil-undo-system
-	'undo-fu)
-  (setq evil-want-fine-undo t)
-  :config (advice-add
-	   'undo-auto--last-boundary-amalgamating-number
-	   :override #'ignore)
-  (evil-ex-define-cmd "q[uit]" nil)
-  (evil-ex-define-cmd "wq" nil)
-  (evil-mode 1))
-
-(use-package
-  lispy
-  :ensure t)
-(use-package
-  lispyville
-  :ensure t
-  :hook (lispy-mode . lispyville-mode))
-(use-package
-  evil-collection
-  :ensure t
-  :config (evil-collection-init)
-  (with-eval-after-load
-      "evil-collection-magit-state"
-    ((evil-define-key*
-       evil-collection-magit-state
-       magit-mode-map
-       [escape]
-       nil))))
+  :config (global-unset-key (kbd "C-z"))
+          (global-set-key (kbd "C-z") 'undo-fu-only-undo)
+	  (global-set-key (kbd "C-S-z") 'undo-fu-only-redo))
 
 (use-package
   which-key
   :ensure t
-  :init (which-key-setup-minibuffer)
-  (which-key-mode))
+  :init ;;(which-key-setup-minibuffer)
+  (which-key-setup-side-window-bottom)
+  (which-key-mode)
+  (define-key which-key-mode-map (kbd "C-x \\") 'which-key-C-h-dispatch))
 
 (use-package general :ensure t)
-
-(use-package helm :ensure t)
-(use-package
-  helm-projectile
-  :ensure t)
-(use-package
-  helm-swoop
-  :ensure t)
 
 (use-package
   flymake-shellcheck
@@ -216,21 +200,23 @@
   :config (dashboard-setup-startup-hook)
   (setq dashboard-banner-logo-title
 	"Dashboard")
-  (setq dashboard-set-init-info
-	nil)
   (setq dashboard-set-footer nil))
 
-(load
- (expand-file-name
-  "keybindings.el"
-  user-emacs-directory))
+;; Keybindings
+(general-define-key "M-x" 'helm-M-x)
+(general-define-key
+ :prefix "C-x"
+ "b" 'helm-buffers-list
+ "C-f" 'helm-find-files)
+(general-define-key
+ :prefix "C-c"
+ "s" 'helm-occur)
 
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(helm-minibuffer-history-key "M-p")
  '(package-selected-packages
    '(lispyville which-key undo-fu srefactor rainbow-delimiters magit lispy helm-swoop helm-projectile general format-all flymake-shellcheck evil-collection eglot doom-modeline company atom-one-dark-theme)))
 (custom-set-faces
