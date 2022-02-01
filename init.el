@@ -133,7 +133,8 @@
 (use-package org :defer)
 (use-package helm :ensure t)
 (use-package avy :ensure t :config (global-set-key (kbd "C-/") 'avy-goto-char-timer))
-					 
+(use-package magit :ensure t)
+
 (use-package
   rainbow-delimiters
   :ensure t
