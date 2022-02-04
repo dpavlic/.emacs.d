@@ -4,21 +4,21 @@
 	 (mapcar #'file-name-as-directory path-vals)))
     (mapconcat 'identity map-to-dirs "")))
 
-;; Package bootstrap and initialize
-(eval-when-compile
-  (add-to-list
-   'load-path
-   (my/join-path
-    user-emacs-directory
-    "pkg"
-    "use-package"))
-  (require 'use-package))
-(setq use-package-compute-statistics t)
+;; M-x elpamr-create-mirror-for-installed to install / update local mirror
+(add-to-list 'load-path (my/join-path user-emacs-directory "pkg" "elpa-mirror"))
+(require 'elpa-mirror)
+(setq package-archives `(("myelpa" . ,(my/join-path user-emacs-directory "pkg" "my-elpa"))))
+(require 'use-package)
+;;ser-emacs-directory(setq use-package-compute-statistics t)
 
-(package-initialize)
-(add-to-list
- 'package-archives
- '("MELPA" . "http://melpa.org/packages/"))
+(defun my-switch-archive(arg)
+  "Switch between MELPA and personal MELPA mirror"
+  (interactive "MELPA (M) or my elpa (any other key): ")
+  (if (string-equal arg "M")
+      (setq package-archives `(("MELPA" . "https://melpa.org/packages/")))
+      (setq package-archives `(("myelpa" . ,(my/join-path u "pkg" "my-elpa"))))
+      )
+  (message "%s" package-archives))
 
 ;; Basic Configuration
 ;; 1. Display Line Numbers
@@ -100,17 +100,13 @@
 
 ;; Themeing Packages
 ;; Set to Atom One Dark Theme
-;; Set to doom status line with column number
 ;; Set default fonts
 (use-package
   atom-one-dark-theme
   :ensure t
   :config (load-theme 'atom-one-dark t))
-(use-package
-  doom-modeline
-  :ensure t
-  :config (doom-modeline-mode 1)
-  (setq column-number-mode t))
+
+(setq column-number-mode t)
 (cond ((find-font
 	(font-spec
 	 :name "FuraCode Nerd Font"))
@@ -131,6 +127,11 @@
 
 ;; Packages
 (use-package org :defer)
+(use-package god-mode
+  :ensure t
+  :init
+  :config (god-mode))
+(use-package key-chord :ensure t :config (key-chord-mode 1))
 (use-package helm :ensure t)
 (use-package avy :ensure t :config (global-set-key (kbd "C-/") 'avy-goto-char-timer))
 (use-package magit :ensure t)
@@ -156,6 +157,7 @@
   :ensure t
   :init ;;(which-key-setup-minibuffer)
   (which-key-setup-side-window-bottom)
+  (which-key-enable-god-mode-support)
   (which-key-mode)
   (define-key which-key-mode-map (kbd "C-x \\") 'which-key-C-h-dispatch))
 
@@ -197,6 +199,7 @@
 
 ;; Keybindings
 (general-define-key "M-x" 'helm-M-x)
+(general-define-key "<escape>" 'god-mode-all)
 (general-define-key
  :prefix "C-x"
  "b" 'helm-buffers-list
@@ -204,7 +207,56 @@
 (general-define-key
  :prefix "C-c"
  "e" 'eshell
+ "l" 'avy-goto-line
  "s" 'helm-occur)
+
+;; God Mode Settings and Extensions
+(defun my-god-mode-update-cursor-type ()
+  (setq cursor-type (if (or god-local-mode buffer-read-only) 'box 'bar)))
+
+(defun god-mod-toggle ()
+  (interactive)
+  (if (string-equal god-mod-current-mode "C")
+      (progn
+	(setq god-mod-current-mode "M")
+	(setq god-mod-alist '((nil . "M-"))))
+    (progn
+      (setq god-mod-current-mode "C")
+      (setq god-mod-alist '((nil . "C-"))))))
+
+(defun my-god-mode-update-mode-line ()
+  (cond
+   ((and god-local-mode (string-equal god-mod-current-mode "C"))
+    (set-face-attribute 'mode-line nil
+                        :foreground "#604000"
+                        :background "#98C379")
+    (set-face-attribute 'mode-line-inactive nil
+                        :foreground "#3f3000"
+                        :background "#98C379"))
+   ((and god-local-mode (string-equal god-mod-current-mode "M"))
+    (set-face-attribute 'mode-line nil
+                        :foreground "#604000"
+                        :background "#E06C75")
+    (set-face-attribute 'mode-line-inactive nil
+                        :foreground "#3f3000"
+                        :background "#E06C75"))
+   (t
+    (set-face-attribute 'mode-line nil
+			:foreground "#0a0a0a"
+			:background "#d7d7d7")
+    (set-face-attribute 'mode-line-inactive nil
+			:foreground "#404148"
+			:background "#efefef"))))
+
+(setq god-mod-current-mode "C")
+
+(define-key god-local-mode-map (kbd ".") #'repeat)
+(define-key god-local-mode-map (kbd "i") #'god-local-mode)
+(define-key god-local-mode-map (kbd ",") #'god-mod-toggle)
+(key-chord-define-global "kj" 'god-mode-all)
+
+(add-hook 'post-command-hook #'my-god-mode-update-cursor-type)
+(add-hook 'post-command-hook 'my-god-mode-update-mode-line)
 
 ;; Set custom variables in a different file
 (setq custom-file (concat user-emacs-directory "custom.el"))
