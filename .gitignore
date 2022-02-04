@@ -1,9 +1,9 @@
+# Ignore everything
 *
-*.*
-!init.el
-!keybindings.el
+# Don't ignore directories, so we can recurse into them
+!*/
+# Don't ignore .gitignore and init.el files
 !.gitignore
-!/eshell
-/eshell/*
-!/eshell/alias
-
+!init.el
+!*.tar
+!elpa-mirror.el
