@@ -9,7 +9,7 @@
 (require 'elpa-mirror)
 (setq package-archives `(("myelpa" . ,(my/join-path user-emacs-directory "pkg" "my-elpa"))))
 (require 'use-package)
-;;ser-emacs-directory(setq use-package-compute-statistics t)
+(setq use-package-compute-statistics t)
 
 (defun my-switch-archive(arg)
   "Switch between MELPA and personal MELPA mirror"
@@ -127,12 +127,16 @@
 
 ;; Packages
 (use-package org :defer)
-(use-package god-mode
+(use-package hydra :ensure t)
+(use-package major-mode-hydra
   :ensure t
-  :init
-  :config (god-mode))
+  :bind
+  ("M-SPC" . major-mode-hydra))
+(use-package pretty-hydra :ensure t)
+(use-package fontawesome :ensure t)
 (use-package key-chord :ensure t :config (key-chord-mode 1))
 (use-package helm :ensure t)
+(use-package swiper-helm :ensure t)
 (use-package avy :ensure t :config (global-set-key (kbd "C-/") 'avy-goto-char-timer))
 (use-package magit :ensure t)
 
@@ -157,7 +161,6 @@
   :ensure t
   :init ;;(which-key-setup-minibuffer)
   (which-key-setup-side-window-bottom)
-  (which-key-enable-god-mode-support)
   (which-key-mode)
   (define-key which-key-mode-map (kbd "C-x \\") 'which-key-C-h-dispatch))
 
@@ -197,9 +200,72 @@
 	"Dashboard")
   (setq dashboard-set-footer nil))
 
+(defun with-faicon (icon str &optional height v-adjust)
+  (s-concat (all-the-icons-faicon icon :v-adjust (or v-adjust 0) :height (or height 1)) " " str))
+
+(defvar hydra-hydra--title (with-faicon "map" "Hydra" 1 -0.05))
+(defvar hydra-system--title (with-faicon "map" "System" 1 -0.05))
+(defvar hydra-nav--title (with-faicon "map" "Nav" 1 -0.05))
+
+(pretty-hydra-define hydra-hydra (:foreign-keys warn :title hydra-hydra--title :quit-key "q" :exit t)
+  ("Hydras"
+   (("s" hydra-system/body "system")
+    ("k" hydra-nav/body "nav"))))
+
+(pretty-hydra-define hydra-system (:foreign-keys warn :title hydra-system--title :quit-key "q")
+  ("System"
+   (("b" helm-buffers-list "buffer list")
+    ("s" save-buffer "buffer save")
+    ("g" magit-status "git status")
+    ("." hydra-hydra/body "hydras" :exit t))))
+
+(pretty-hydra-define hydra-nav (:foreign-keys warn :title hydra-nav--title :quit-key "q")
+  ("Basic"
+   (("f" forward-char "forward")
+    ("b" backward-char "backward")
+    ("F" forward-word "fast forward")
+    ("B" backward-word "fast backward")
+    ("p" previous-line "prev line")
+    ("n" next-line "next line"))
+
+   "Extended"
+   (("a" beginning-of-line "begin of line")
+    ("e" end-of-line "end of line")
+    ("v" scroll-up "pg down")
+    ("V" scroll-down "pg up")
+    ("<" beginning-of-buffer "begin of buffer")
+    (">" end-of-buffer "end buffer"))
+
+   "Search"
+   (("s" swiper-helm "search")
+    ("g" goto-line "to line")
+    ("/" avy-goto-char-timer "avy search"))
+   
+   "Select / Delete"
+   (("k" kill-line "kill line")
+    ("d" delete-char "del char")
+    ("D" kill-word "kill word")
+    ("<SPC>" (cond ((not mark-active) (call-interactively 'set-mark-command))
+                   (t (deactivate-mark))) "mark")
+    ("w" kill-region "kill region")
+    ("W" kill-ring-save "save region")
+    ("<backspace>" delete-backward-char nil)
+    ("<return>" newline nil))
+
+   "Other"
+   (("y" yank "yank")
+    ("Y" yank-pop "yank pop")
+    ("z" undo-fu-only-undo "undo")
+    ("Z" undo-fu-only-redo "redo")
+    ("i" (lambda (txt)
+	 (interactive "sQuick insertion:")
+	 (insert txt)) "insert")
+    ("." hydra-hydra/body "hydras" :exit t))))
+
 ;; Keybindings
 (general-define-key "M-x" 'helm-M-x)
-(general-define-key "<escape>" 'god-mode-all)
+
+(setq key-chord-two-keys-delay 0.4)
 (general-define-key
  :prefix "C-x"
  "b" 'helm-buffers-list
@@ -207,58 +273,42 @@
 (general-define-key
  :prefix "C-c"
  "e" 'eshell
- "l" 'avy-goto-line
  "s" 'helm-occur)
-
-;; God Mode Settings and Extensions
-(defun my-god-mode-update-cursor-type ()
-  (setq cursor-type (if (or god-local-mode buffer-read-only) 'box 'bar)))
-
-(defun god-mod-toggle ()
-  (interactive)
-  (if (string-equal god-mod-current-mode "C")
-      (progn
-	(setq god-mod-current-mode "M")
-	(setq god-mod-alist '((nil . "M-"))))
-    (progn
-      (setq god-mod-current-mode "C")
-      (setq god-mod-alist '((nil . "C-"))))))
-
-(defun my-god-mode-update-mode-line ()
-  (cond
-   ((and god-local-mode (string-equal god-mod-current-mode "C"))
-    (set-face-attribute 'mode-line nil
-                        :foreground "#604000"
-                        :background "#98C379")
-    (set-face-attribute 'mode-line-inactive nil
-                        :foreground "#3f3000"
-                        :background "#98C379"))
-   ((and god-local-mode (string-equal god-mod-current-mode "M"))
-    (set-face-attribute 'mode-line nil
-                        :foreground "#604000"
-                        :background "#E06C75")
-    (set-face-attribute 'mode-line-inactive nil
-                        :foreground "#3f3000"
-                        :background "#E06C75"))
-   (t
-    (set-face-attribute 'mode-line nil
-			:foreground "#0a0a0a"
-			:background "#d7d7d7")
-    (set-face-attribute 'mode-line-inactive nil
-			:foreground "#404148"
-			:background "#efefef"))))
-
-(setq god-mod-current-mode "C")
-
-(define-key god-local-mode-map (kbd ".") #'repeat)
-(define-key god-local-mode-map (kbd "i") #'god-local-mode)
-(define-key god-local-mode-map (kbd ",") #'god-mod-toggle)
-(key-chord-define-global "kj" 'god-mode-all)
-
-(add-hook 'post-command-hook #'my-god-mode-update-cursor-type)
-(add-hook 'post-command-hook 'my-god-mode-update-mode-line)
+(general-define-key
+ (general-chord "kj") 'hydra-nav/body
+ (general-chord "\\s") 'hydra-system/body
+ (general-chord "\\x") 'helm-M-x)
 
 ;; Set custom variables in a different file
 (setq custom-file (concat user-emacs-directory "custom.el"))
 (load custom-file 'noerror)
 
+;; (defvar jp-window--title (with-faicon "windows" "Window Management" 1 -0.05))
+
+;; (pretty-hydra-define jp-window (:foreign-keys warn :title jp-window--title :quit-key "q")
+;;   ("Actions"
+;;    (("TAB" other-window "switch")
+;;     ("x" ace-delete-window "delete")
+;;     ("m" ace-delete-other-windows "maximize")
+;;     ("s" ace-swap-window "swap")
+;;     ("a" ace-select-window "select"))
+
+;;    "Resize"
+;;    (("h" move-border-left "←")
+;;     ("j" move-border-down "↓")
+;;     ("k" move-border-up "↑")
+;;     ("l" move-border-right "→")
+;;     ("n" balance-windows "balance")
+;;     ("f" toggle-frame-fullscreen "toggle fullscreen"))
+
+;;    "Split"
+;;    (("b" split-window-right "horizontally")
+;;     ("B" split-window-horizontally-instead "horizontally instead")
+;;     ("v" split-window-below "vertically")
+;;     ("V" split-window-vertically-instead "vertically instead"))
+
+;;    "Zoom"
+;;    (("+" zoom-in "in")
+;;     ("=" zoom-in)
+;;     ("-" zoom-out "out")
+;;     ("0" jp-zoom-default "reset"))))
