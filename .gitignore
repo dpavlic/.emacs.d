@@ -1,9 +1,19 @@
-# Ignore everything
-*
-# Don't ignore directories, so we can recurse into them
-!*/
-# Don't ignore .gitignore and init.el files
-!.gitignore
-!init.el
-!*.tar
-!elpa-mirror.el
+*.org*
+*.elc
+*.html
+
+tramp
+custom.el
+\*eshell\*
+bookmarks
+projectile-bookmarks.eld
+
+auto-save-list/
+eshell/lastdir
+eshell/history
+backup/
+transient/
+
+straight/build-cache.el
+straight/build
+straight/repos
