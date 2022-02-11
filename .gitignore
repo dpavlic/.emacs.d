@@ -7,6 +7,8 @@ custom.el
 \*eshell\*
 bookmarks
 projectile-bookmarks.eld
+recentf
+local.el
 
 auto-save-list/
 eshell/lastdir
