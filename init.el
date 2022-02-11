@@ -75,6 +75,10 @@
  'before-save-hook
  'force-backup-of-buffer)
 
+;; Remove lockfile creation
+(setq create-lockfiles nil)
+(setq auto-save-default nil)
+
 ;; Fix up the isearch jumping to the END of the search
 (add-hook 'isearch-mode-end-hook 'my-goto-match-beginning)
 (defun my-goto-match-beginning ()
