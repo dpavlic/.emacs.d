@@ -106,6 +106,10 @@
   :straight t
   :config (load-theme 'atom-one-dark t))
 
+(use-package doom-modeline
+  :straight t
+  :init (doom-modeline-mode 1))
+
 (setq column-number-mode t)
 (cond ((find-font
 	(font-spec
