@@ -272,6 +272,7 @@
    (("k" kill-line "kill line")
     ("d" delete-char "del char")
     ("D" kill-word "kill word")
+    ("j" (join-line -1))
     ("<SPC>" (
 	      cond ((not mark-active) (call-interactively 'set-mark-command)
 		    (t (deactivate-mark))) "mark"))
