@@ -36,11 +36,6 @@
 (menu-bar-mode -1)
 (tool-bar-mode -1)
 
-;; Scrollings, vim style
-;;(setq scroll-step 2)
-;;(setq scroll-conservatively 1000)
-;;(setq auto-window-vscroll nil)
-
 ;; Backups
 (setq version-control
       t
@@ -123,23 +118,11 @@
 (use-package all-the-icons :straight t)
 
 (setq column-number-mode t)
-(cond ((find-font
-	(font-spec
-	 :name "FuraCode Nerd Font"))
-       (set-frame-font
-	"FuraCode Nerd Font-14"))
-      ((find-font
-	(font-spec :name "Menlo"))
-       (set-frame-font "Menlo-12"))
-      ((find-font
-	(font-spec
-	 :name "DejaVu Sans Mono"))
-       (set-frame-font
-	"DejaVu Sans Mono-12"))
-      ((find-font
-	(font-spec :name "Inconsolata"))
-       (set-frame-font
-	"Inconsolata-12")))
+(cond
+ ((find-font (font-spec :name "Monaco")) (set-frame-font "Monaco-14"))
+ ((find-font (font-spec :name "Menlo")) (set-frame-font "Menlo-14"))
+ ((find-font (font-spec :name "DejaVu Sans Mono")) (set-frame-font "DejaVu Sans Mono-14"))
+ ((find-font (font-spec :name "Inconsolata")) (set-frame-font "Inconsolata-14")))
 
 ;; Packages
 
@@ -161,10 +144,15 @@
   :if (memq window-system '(mac ns))
   :config (exec-path-from-shell-initialize))
 
-(use-package treemacs :straight t)
+(use-package treemacs
+  :straight t
+  :config
+  (setq treemacs-text-scale -1)
+  (treemacs-project-follow-mode))
 (use-package treemacs-all-the-icons
   :straight t
   :config (treemacs-load-theme "all-the-icons"))
+
 (use-package avy
   :straight t
   :config (global-set-key (kbd "C-/") 'avy-goto-char-timer))
@@ -192,6 +180,7 @@
   :config
   (define-key evil-normal-state-map "u" 'undo-fu-only-undo)
   (define-key evil-normal-state-map "U" 'undo-fu-only-redo))
+(use-package hydra :straight t)
 
 (use-package counsel
   :straight t
@@ -217,7 +206,7 @@
   :init
   (setq which-key-idle-delay 0.25)
   (setq which-key-idle-secondary-delay 0.05))
-(use-package general :straight t)
+(use-package general :straight t :config (general-override-mode))
 
 (use-package
   flymake-shellcheck
@@ -266,24 +255,59 @@
 	"Dashboard")
   (setq dashboard-set-footer nil))
 
-;; Keybinding
+;; Ivy bindings
+(defun my/add-to-path (&rest args)
+  "Add to path"
+  (add-to-list 'exec-path args))
+(ivy-add-actions #'counsel-find-file '(("p" my/add-to-path "Add to PATH")))
+
+;; Hydras
+(defhydra hydra-windows-nav (:color red)
+    ("s" shrink-window-horizontally "shrink horizontally" :column "Sizing")
+    ("e" enlarge-window-horizontally "enlarge horizontally")
+    ("b" balance-windows "balance window height")
+    ("m" maximize-window "maximize current window")
+    ("M" minimize-window "minimize current window")
+    
+    ("h" split-window-below "split horizontally" :column "Split management")
+    ("v" split-window-right "split vertically")
+    ("d" delete-window "delete current window")
+    ("x" delete-other-windows "delete-other-windows")
+
+    ("h" windmove-left "← window")
+    ("j" windmove-down "↓ window")
+    ("k" windmove-up "↑ window")
+    ("l" windmove-right "→ window")
+    ("r" toggle-window-split "rotate windows")
+    ("q" nil "quit menu" :color blue :column nil))
+
+;; Keybindings
 (general-define-key
  :state
  'insert "k" (general-key-dispatch 'self-insert-command "j" 'evil-normal-state))
+
+(general-define-key
+ :keymaps 'global
+ "C-h" 'windmove-left
+ "C-l" 'windmove-right
+ "C-j" 'windmove-down
+ "C-k" 'windmove-up)
 
 (general-define-key
   :states 'normal
   :prefix "SPC"
   "s" '(:ignore t :which-key "System")
   "b" '(ivy-switch-buffer :which-key "Buffers list")
+  "f" '(counsel-find-file :which-key "Files")
   "x" '(counsel-M-x :which-key "m-X")
   "r" '(swiper :which-key "swiper")
   "g" '(magit-status :which-key "Git status")
   "E" '(eshell :which-key "eshell")
+  "`" '(treemacs-select-window :which-key "Treemacs")
   "s s" '(save-buffer :which-key "Save buffer")
   "s k" '(kill-this-buffer :which-key "buffer Kill")
   "s r" '(counsel-recentf :which-key "recent files")
-  "/" 'avy-goto-char-timer "avy")
+  "/" '(avy-goto-char-timer :which-key "avy"))
 
 (general-define-key
   :states 'normal
