@@ -19,3 +19,7 @@ transient/
 straight/build-cache.el
 straight/build
 straight/repos
+/.cache/
+/.lsp-session-v1
+/ido.last
+/projects
