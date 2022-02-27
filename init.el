@@ -36,6 +36,9 @@
 (menu-bar-mode -1)
 (tool-bar-mode -1)
 
+;; Bookmarks: don't save them
+(setq bookmark-save-flag nil)
+
 ;; Backups
 (setq version-control
       t
@@ -144,6 +147,8 @@
   :if (memq window-system '(mac ns))
   :config (exec-path-from-shell-initialize))
 
+(use-package key-chord :straight t :config (key-chord-mode 1))
+
 (use-package treemacs
   :straight t
   :config
@@ -235,15 +240,18 @@
   ;; Use tab completion a la youcompleteme
   (company-tng-configure-default))
 
-(use-package elpy
+;; (use-package elpy
+;;   :straight t
+;;   :defer t
+;;   :init
+;;   (advice-add 'python-mode :before 'elpy-enable)
+;;   :config
+;;   (setq
+;;    python-shell-interpreter "ipython3"
+;;    python-shell-interpreter-args "--simple-prompt --pprint"))
+(use-package hy-mode
   :straight t
-  :defer t
-  :init
-  (advice-add 'python-mode :before 'elpy-enable)
-  :config
-  (setq
-   python-shell-interpreter "ipython3"
-   python-shell-interpreter-args "--simple-prompt --pprint"))
+  :config (setq hy-jedhy--enable? nil))
 
 ;; Dashboard
 (use-package
@@ -256,9 +264,9 @@
   (setq dashboard-set-footer nil))
 
 ;; Ivy bindings
-(defun my/add-to-path (&rest args)
+(defun my/add-to-path (arg)
   "Add to path"
-  (add-to-list 'exec-path args))
+  (add-to-list 'exec-path arg))
 (ivy-add-actions #'counsel-find-file '(("p" my/add-to-path "Add to PATH")))
 
 ;; Hydras
@@ -282,20 +290,34 @@
     ("q" nil "quit menu" :color blue :column nil))
 
 ;; Keybindings
-(general-define-key
- :state
- 'insert "k" (general-key-dispatch 'self-insert-command "j" 'evil-normal-state))
+(add-hook 'eshell-mode-hook
+          (lambda ()
+             (define-key eshell-mode-map (kbd "C-k") #'windmove-up)))
 
 (general-define-key
- :keymaps 'global
- "C-h" 'windmove-left
- "C-l" 'windmove-right
- "C-j" 'windmove-down
- "C-k" 'windmove-up)
+ :keymaps 'evil-insert-state-map
+ (general-chord "kj") 'evil-normal-state)
+;;  :state
+;; 'insert "k" (general-key-dispatch 'self-insert-command "j" 'evil-normal-state))
+
 
 (general-define-key
-  :states 'normal
+ :states 'evil-normal
+ "<left>" 'windmove-left
+ "<right>" 'windmove-right
+ "<down>" 'windmove-down
+ "<up>" 'windmove-up)
+
+(defun my/mark-pop()
+  (defvar mark-is-set nil)
+  (interactive)
+  (if mark-is-set
+      (progn (bookmark-jump "tmp") (setq mark-is-set nil))
+    (progn (bookmark-set "tmp") (setq mark-is-set t))))
+  
+(general-define-key  :states 'normal
   :prefix "SPC"
+  "<SPC>" '(my/mark-pop :which-key "mark")
   "s" '(:ignore t :which-key "System")
   "b" '(ivy-switch-buffer :which-key "Buffers list")
   "f" '(counsel-find-file :which-key "Files")
